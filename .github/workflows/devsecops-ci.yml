@@ -7,13 +7,14 @@ on:
 
 env:
   APP_IMAGE: sikanderali/opencode-neon:latest
-  SECAGENT_TOOL_IMAGE: sikanderali/opencode-neon@sha256:191fe4a231c3e13d36a6887ccaed6eab277bf460a8776206db7021bc69ea6721
+  SECAGENT_TOOL_IMAGE: sikanderali/secagent@sha256:191fe4a231c3e13d36a6887ccaed6eab277bf460a8776206db7021bc69ea6721
 
 jobs:
   quality-and-prebuild-security:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      actions: read
       security-events: write
     steps:
       - name: Checkout
@@ -57,6 +58,7 @@ jobs:
     needs: quality-and-prebuild-security
     permissions:
       contents: read
+      actions: read
       security-events: write
     steps:
       - name: Checkout
@@ -91,8 +93,8 @@ jobs:
           path: reports/
 
       - name: Upload SARIF
-        if: always() && hashFiles('reports/secagent-report.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
+        if: always() && github.event_name == 'push' && hashFiles('reports/secagent-report.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: reports/secagent-report.sarif
 

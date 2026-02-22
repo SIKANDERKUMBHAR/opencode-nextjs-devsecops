@@ -1,0 +1,38 @@
+[
+  {
+    "name": "soda-can",
+    "source": "Poly Pizza",
+    "url": "https://static.poly.pizza/677e15cc-9eb1-4297-8477-bb5cb2f7e764.glb",
+    "output": "public/assets/models/soda-can.glb"
+  },
+  {
+    "name": "cola-bottle",
+    "source": "Poly Pizza",
+    "url": "https://static.poly.pizza/73811091-d5cf-4970-b635-a496ccde614e.glb",
+    "output": "public/assets/models/cola-bottle.glb"
+  },
+  {
+    "name": "ice-cubes",
+    "source": "Poly Pizza",
+    "url": "https://static.poly.pizza/50099163-52b9-4366-9d7c-3f7795b30bd6.glb",
+    "output": "public/assets/models/ice-cubes.glb"
+  },
+  {
+    "name": "liquid-splash",
+    "source": "Poly Pizza",
+    "url": "https://static.poly.pizza/67916341-6cc0-46af-b648-a1b5f67fe998.glb",
+    "output": "public/assets/models/liquid-splash.glb"
+  },
+  {
+    "name": "beverage-crate",
+    "source": "Poly Pizza",
+    "url": "https://static.poly.pizza/20f6059b-45bc-47af-ba1a-2872d9935263.glb",
+    "output": "public/assets/models/beverage-crate.glb"
+  },
+  {
+    "name": "refrigerator-display",
+    "source": "Poly Pizza",
+    "url": "https://static.poly.pizza/a847cd7d-1713-4b0c-ba18-a728258e3e28.glb",
+    "output": "public/assets/models/refrigerator-display.glb"
+  }
+]

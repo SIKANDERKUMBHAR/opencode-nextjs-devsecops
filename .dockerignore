@@ -1,0 +1,10 @@
+node_modules
+.next
+.git
+.DS_Store
+npm-debug.log
+yarn.lock
+pnpm-lock.yaml
+Dockerfile
+README.md
+3d-models

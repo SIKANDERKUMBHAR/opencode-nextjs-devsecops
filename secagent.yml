@@ -1,11 +1,23 @@
 target: .
 output_dir: ./reports
 
-scanners: [semgrep, gitleaks, trivy, checkov]
-formats: [json, html, sarif, md]
+scanners: [semgrep, gitleaks, trivy, checkov, zap]
+formats: [json, html, sarif, md, csv]
 
 fail_on: [CRITICAL, HIGH]
 fail_on_new_only: false
 fail_on_secrets: true
 
 parallelism: 4
+
+zap:
+  enabled: true
+  target_url: http://127.0.0.1:3000
+  api_url: http://127.0.0.1:8090
+  api_request_timeout_seconds: 20
+  api_retries: 12
+  api_retry_delay_seconds: 1.5
+  timeout_seconds: 600
+
+runtime:
+  allow_partial_results: false

@@ -7,7 +7,7 @@ on:
 
 env:
   APP_IMAGE: sikanderali/opencode-neon:latest
-  SECAGENT_TOOL_IMAGE: ${{ secrets.SECAGENT_TOOL_IMAGE }}
+  SECAGENT_TOOL_IMAGE: sikanderali/secagent:latest
 
 jobs:
   quality-and-prebuild-security:

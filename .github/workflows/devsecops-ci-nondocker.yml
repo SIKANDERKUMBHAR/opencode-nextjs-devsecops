@@ -1,6 +1,9 @@
 name: opencode-devsecops-ci-nondocker
 
 on:
+  push:
+    branches: [main]
+  pull_request:
   workflow_dispatch:
 
 env:
@@ -34,8 +37,7 @@ jobs:
 
       - name: Install secagent and scanners (without Docker)
         run: |
-          git clone https://github.com/SIKANDERKUMBHAR/secagent-devsecops-orchestrator.git /tmp/secagent-tool
-          bash /tmp/secagent-tool/scripts/setup-local.sh
+          bash <(curl -fsSL https://raw.githubusercontent.com/SIKANDERKUMBHAR/secagent-devsecops-orchestrator/main/scripts/setup-local.sh)
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Verify secagent environment
@@ -108,8 +110,7 @@ jobs:
 
       - name: Install secagent and scanners (without Docker)
         run: |
-          git clone https://github.com/SIKANDERKUMBHAR/secagent-devsecops-orchestrator.git /tmp/secagent-tool
-          bash /tmp/secagent-tool/scripts/setup-local.sh
+          bash <(curl -fsSL https://raw.githubusercontent.com/SIKANDERKUMBHAR/secagent-devsecops-orchestrator/main/scripts/setup-local.sh)
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Verify secagent environment

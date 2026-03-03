@@ -41,7 +41,7 @@ jobs:
       - name: Install secagent and scanners (without Docker)
         run: |
           for i in 1 2 3; do
-            SECAGENT_INSTALL_SCANNERS=0 bash <(curl -fsSL https://raw.githubusercontent.com/SIKANDERKUMBHAR/secagent-devsecops-orchestrator/main/scripts/setup-local.sh) && break
+            bash <(curl -fsSL https://raw.githubusercontent.com/SIKANDERKUMBHAR/secagent-devsecops-orchestrator/main/scripts/setup-local.sh) && break
             if [ "$i" -eq 3 ]; then
               echo "secagent installer failed after retries"
               exit 1
@@ -145,7 +145,7 @@ jobs:
       - name: Install secagent and scanners (without Docker)
         run: |
           for i in 1 2 3; do
-            SECAGENT_INSTALL_SCANNERS=0 bash <(curl -fsSL https://raw.githubusercontent.com/SIKANDERKUMBHAR/secagent-devsecops-orchestrator/main/scripts/setup-local.sh) && break
+            bash <(curl -fsSL https://raw.githubusercontent.com/SIKANDERKUMBHAR/secagent-devsecops-orchestrator/main/scripts/setup-local.sh) && break
             if [ "$i" -eq 3 ]; then
               echo "secagent installer failed after retries"
               exit 1

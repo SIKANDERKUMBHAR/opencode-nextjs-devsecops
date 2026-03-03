@@ -38,7 +38,7 @@ jobs:
       - name: Install secagent and scanners (without Docker)
         run: |
           for i in 1 2 3; do
-            bash <(curl -fsSL https://raw.githubusercontent.com/SIKANDERKUMBHAR/secagent-devsecops-orchestrator/main/scripts/setup-local.sh) && break
+            SECAGENT_INSTALL_SCANNERS=0 bash <(curl -fsSL https://raw.githubusercontent.com/SIKANDERKUMBHAR/secagent-devsecops-orchestrator/main/scripts/setup-local.sh) && break
             if [ "$i" -eq 3 ]; then
               echo "secagent installer failed after retries"
               exit 1
@@ -47,6 +47,24 @@ jobs:
             sleep 5
           done
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install scanners (without Docker)
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.local/bin:$PATH"
+          python3 -m pip install --user --upgrade semgrep==1.84.0 checkov==3.2.298
+          GITLEAKS_VER=8.23.3
+          TRIVY_VER=0.57.1
+          curl -fL --retry 5 --retry-delay 2 --retry-all-errors \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VER}/gitleaks_${GITLEAKS_VER}_linux_x64.tar.gz" \
+            -o /tmp/gitleaks.tgz
+          tar -xzf /tmp/gitleaks.tgz -C "$HOME/.local/bin" gitleaks
+          chmod +x "$HOME/.local/bin/gitleaks"
+          curl -fL --retry 5 --retry-delay 2 --retry-all-errors \
+            "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VER}/trivy_${TRIVY_VER}_Linux-64bit.tar.gz" \
+            -o /tmp/trivy.tgz
+          tar -xzf /tmp/trivy.tgz -C "$HOME/.local/bin" trivy
+          chmod +x "$HOME/.local/bin/trivy"
 
       - name: Verify secagent environment
         run: |
@@ -119,7 +137,7 @@ jobs:
       - name: Install secagent and scanners (without Docker)
         run: |
           for i in 1 2 3; do
-            bash <(curl -fsSL https://raw.githubusercontent.com/SIKANDERKUMBHAR/secagent-devsecops-orchestrator/main/scripts/setup-local.sh) && break
+            SECAGENT_INSTALL_SCANNERS=0 bash <(curl -fsSL https://raw.githubusercontent.com/SIKANDERKUMBHAR/secagent-devsecops-orchestrator/main/scripts/setup-local.sh) && break
             if [ "$i" -eq 3 ]; then
               echo "secagent installer failed after retries"
               exit 1
@@ -128,6 +146,24 @@ jobs:
             sleep 5
           done
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install scanners (without Docker)
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.local/bin:$PATH"
+          python3 -m pip install --user --upgrade semgrep==1.84.0 checkov==3.2.298
+          GITLEAKS_VER=8.23.3
+          TRIVY_VER=0.57.1
+          curl -fL --retry 5 --retry-delay 2 --retry-all-errors \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VER}/gitleaks_${GITLEAKS_VER}_linux_x64.tar.gz" \
+            -o /tmp/gitleaks.tgz
+          tar -xzf /tmp/gitleaks.tgz -C "$HOME/.local/bin" gitleaks
+          chmod +x "$HOME/.local/bin/gitleaks"
+          curl -fL --retry 5 --retry-delay 2 --retry-all-errors \
+            "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VER}/trivy_${TRIVY_VER}_Linux-64bit.tar.gz" \
+            -o /tmp/trivy.tgz
+          tar -xzf /tmp/trivy.tgz -C "$HOME/.local/bin" trivy
+          chmod +x "$HOME/.local/bin/trivy"
 
       - name: Verify secagent environment
         run: |

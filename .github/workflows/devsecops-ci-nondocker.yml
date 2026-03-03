@@ -54,7 +54,7 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           python3 -m pip install --user --upgrade semgrep==1.84.0 checkov==3.2.298
           GITLEAKS_VER=8.23.3
-          TRIVY_VER=0.57.1
+          TRIVY_VER=$(curl -fsSL https://api.github.com/repos/aquasecurity/trivy/releases/latest | python3 -c 'import json,sys; print(json.load(sys.stdin)["tag_name"].lstrip("v"))')
           curl -fL --retry 5 --retry-delay 2 --retry-all-errors \
             "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VER}/gitleaks_${GITLEAKS_VER}_linux_x64.tar.gz" \
             -o /tmp/gitleaks.tgz
@@ -153,7 +153,7 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           python3 -m pip install --user --upgrade semgrep==1.84.0 checkov==3.2.298
           GITLEAKS_VER=8.23.3
-          TRIVY_VER=0.57.1
+          TRIVY_VER=$(curl -fsSL https://api.github.com/repos/aquasecurity/trivy/releases/latest | python3 -c 'import json,sys; print(json.load(sys.stdin)["tag_name"].lstrip("v"))')
           curl -fL --retry 5 --retry-delay 2 --retry-all-errors \
             "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VER}/gitleaks_${GITLEAKS_VER}_linux_x64.tar.gz" \
             -o /tmp/gitleaks.tgz

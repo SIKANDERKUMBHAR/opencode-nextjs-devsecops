@@ -1,0 +1,176 @@
+name: opencode-devsecops-ci-nondocker
+
+on:
+  workflow_dispatch:
+
+env:
+  APP_IMAGE: sikanderali/opencode-neon:latest
+
+jobs:
+  quality-and-prebuild-security:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build app
+        run: npm run build
+
+      - name: Install secagent and scanners (without Docker)
+        run: |
+          git clone https://github.com/SIKANDERKUMBHAR/secagent-devsecops-orchestrator.git /tmp/secagent-tool
+          bash /tmp/secagent-tool/scripts/setup-local.sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Verify secagent environment
+        run: |
+          secagent version
+          secagent doctor --config ./secagent.yml
+
+      - name: Start app for pre-build DAST
+        run: |
+          npm run start -- -H 0.0.0.0 -p 3000 > /tmp/prebuild-app.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:3000 >/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:3000 >/dev/null
+
+      - name: Start fresh ZAP sidecar (pre-build)
+        run: |
+          docker rm -f secagent-zap || true
+          docker run -d --name secagent-zap \
+            --health-cmd "curl --silent --output /dev/null --fail http://localhost:8090/ || exit 1" \
+            --health-interval 20s --health-timeout 10s --health-retries 10 \
+            -p 8090:8090 \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap.sh -daemon -host 0.0.0.0 -port 8090 \
+            -config api.disablekey=true \
+            -config api.addrs.addr.name=.* \
+            -config api.addrs.addr.regex=true \
+            -config autoupdate.checkOnStart=false \
+            -config autoupdate.installAddonUpdates=false
+          for i in {1..40}; do
+            if curl -fsS http://127.0.0.1:8090/JSON/core/view/version/ >/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:8090/JSON/core/view/version/ >/dev/null
+
+      - name: Pre-build secagent security scan (without Docker)
+        run: secagent scan --target . --config ./secagent.yml
+
+      - name: Cleanup pre-build app and ZAP
+        if: always()
+        run: |
+          docker rm -f secagent-zap || true
+          pkill -f "next start" || true
+
+      - name: Upload pre-build security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prebuild-security-reports-nondocker
+          path: reports/
+
+  build-test-image-and-push:
+    runs-on: ubuntu-latest
+    needs: quality-and-prebuild-security
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t $APP_IMAGE .
+
+      - name: Install secagent and scanners (without Docker)
+        run: |
+          git clone https://github.com/SIKANDERKUMBHAR/secagent-devsecops-orchestrator.git /tmp/secagent-tool
+          bash /tmp/secagent-tool/scripts/setup-local.sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Verify secagent environment
+        run: |
+          secagent version
+          secagent doctor --config ./secagent.yml
+
+      - name: Runtime smoke test for built image
+        run: |
+          docker run -d --name app-under-test -p 3000:3000 $APP_IMAGE
+          sleep 12
+          curl -fsS http://localhost:3000 > /tmp/app_response.html
+
+      - name: Start fresh ZAP sidecar (post-build)
+        run: |
+          docker rm -f secagent-zap || true
+          docker run -d --name secagent-zap \
+            --health-cmd "curl --silent --output /dev/null --fail http://localhost:8090/ || exit 1" \
+            --health-interval 20s --health-timeout 10s --health-retries 10 \
+            -p 8090:8090 \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap.sh -daemon -host 0.0.0.0 -port 8090 \
+            -config api.disablekey=true \
+            -config api.addrs.addr.name=.* \
+            -config api.addrs.addr.regex=true \
+            -config autoupdate.checkOnStart=false \
+            -config autoupdate.installAddonUpdates=false
+          for i in {1..40}; do
+            if curl -fsS http://127.0.0.1:8090/JSON/core/view/version/ >/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:8090/JSON/core/view/version/ >/dev/null
+
+      - name: Post-build secagent security scan (without Docker)
+        run: secagent scan --target . --config ./secagent.yml
+
+      - name: Cleanup post-build app and ZAP
+        if: always()
+        run: |
+          docker rm -f secagent-zap || true
+          docker rm -f app-under-test || true
+
+      - name: Upload post-build security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: postbuild-security-reports-nondocker
+          path: reports/
+
+      - name: Upload SARIF
+        if: always() && github.event_name == 'push' && hashFiles('reports/secagent-report.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: reports/secagent-report.sarif
+
+      - name: Login to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_LOGIN }}" --password-stdin
+
+      - name: Push image latest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: docker push $APP_IMAGE

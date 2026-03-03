@@ -51,24 +51,6 @@ jobs:
           done
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      - name: Install scanners (without Docker)
-        run: |
-          set -euo pipefail
-          export PATH="$HOME/.local/bin:$PATH"
-          python3 -m pip install --user --upgrade semgrep==1.84.0 checkov==3.2.298
-          GITLEAKS_VER=8.23.3
-          TRIVY_VER=$(curl -fsSL https://api.github.com/repos/aquasecurity/trivy/releases/latest | python3 -c 'import json,sys; print(json.load(sys.stdin)["tag_name"].lstrip("v"))')
-          curl -fL --retry 5 --retry-delay 2 --retry-all-errors \
-            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VER}/gitleaks_${GITLEAKS_VER}_linux_x64.tar.gz" \
-            -o /tmp/gitleaks.tgz
-          tar -xzf /tmp/gitleaks.tgz -C "$HOME/.local/bin" gitleaks
-          chmod +x "$HOME/.local/bin/gitleaks"
-          curl -fL --retry 5 --retry-delay 2 --retry-all-errors \
-            "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VER}/trivy_${TRIVY_VER}_Linux-64bit.tar.gz" \
-            -o /tmp/trivy.tgz
-          tar -xzf /tmp/trivy.tgz -C "$HOME/.local/bin" trivy
-          chmod +x "$HOME/.local/bin/trivy"
-
       - name: Restore Trivy cache
         uses: actions/cache@v4
         with:
@@ -86,8 +68,8 @@ jobs:
             local java_repo="$2"
             echo "Using Trivy DB repo: $db_repo"
             echo "Using Trivy Java DB repo: $java_repo"
-            TRIVY_DB_REPOSITORY="$db_repo" trivy --cache-dir "$TRIVY_CACHE_DIR" --download-db-only
-            TRIVY_DB_REPOSITORY="$db_repo" TRIVY_JAVA_DB_REPOSITORY="$java_repo" trivy --cache-dir "$TRIVY_CACHE_DIR" --download-java-db-only
+            TRIVY_DB_REPOSITORY="$db_repo" trivy image --cache-dir "$TRIVY_CACHE_DIR" --download-db-only alpine:3.20
+            TRIVY_DB_REPOSITORY="$db_repo" TRIVY_JAVA_DB_REPOSITORY="$java_repo" trivy image --cache-dir "$TRIVY_CACHE_DIR" --download-java-db-only eclipse-temurin:17-jre
           }
 
           download_with_repo "$TRIVY_DB_REPOSITORY" "$TRIVY_JAVA_DB_REPOSITORY" || download_with_repo "public.ecr.aws/aquasecurity/trivy-db" "public.ecr.aws/aquasecurity/trivy-java-db"
@@ -173,24 +155,6 @@ jobs:
           done
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      - name: Install scanners (without Docker)
-        run: |
-          set -euo pipefail
-          export PATH="$HOME/.local/bin:$PATH"
-          python3 -m pip install --user --upgrade semgrep==1.84.0 checkov==3.2.298
-          GITLEAKS_VER=8.23.3
-          TRIVY_VER=$(curl -fsSL https://api.github.com/repos/aquasecurity/trivy/releases/latest | python3 -c 'import json,sys; print(json.load(sys.stdin)["tag_name"].lstrip("v"))')
-          curl -fL --retry 5 --retry-delay 2 --retry-all-errors \
-            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VER}/gitleaks_${GITLEAKS_VER}_linux_x64.tar.gz" \
-            -o /tmp/gitleaks.tgz
-          tar -xzf /tmp/gitleaks.tgz -C "$HOME/.local/bin" gitleaks
-          chmod +x "$HOME/.local/bin/gitleaks"
-          curl -fL --retry 5 --retry-delay 2 --retry-all-errors \
-            "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VER}/trivy_${TRIVY_VER}_Linux-64bit.tar.gz" \
-            -o /tmp/trivy.tgz
-          tar -xzf /tmp/trivy.tgz -C "$HOME/.local/bin" trivy
-          chmod +x "$HOME/.local/bin/trivy"
-
       - name: Restore Trivy cache
         uses: actions/cache@v4
         with:
@@ -208,8 +172,8 @@ jobs:
             local java_repo="$2"
             echo "Using Trivy DB repo: $db_repo"
             echo "Using Trivy Java DB repo: $java_repo"
-            TRIVY_DB_REPOSITORY="$db_repo" trivy --cache-dir "$TRIVY_CACHE_DIR" --download-db-only
-            TRIVY_DB_REPOSITORY="$db_repo" TRIVY_JAVA_DB_REPOSITORY="$java_repo" trivy --cache-dir "$TRIVY_CACHE_DIR" --download-java-db-only
+            TRIVY_DB_REPOSITORY="$db_repo" trivy image --cache-dir "$TRIVY_CACHE_DIR" --download-db-only alpine:3.20
+            TRIVY_DB_REPOSITORY="$db_repo" TRIVY_JAVA_DB_REPOSITORY="$java_repo" trivy image --cache-dir "$TRIVY_CACHE_DIR" --download-java-db-only eclipse-temurin:17-jre
           }
 
           download_with_repo "$TRIVY_DB_REPOSITORY" "$TRIVY_JAVA_DB_REPOSITORY" || download_with_repo "public.ecr.aws/aquasecurity/trivy-db" "public.ecr.aws/aquasecurity/trivy-java-db"

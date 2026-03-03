@@ -8,7 +8,7 @@ on:
 
 env:
   APP_IMAGE: sikanderali/opencode-neon:latest
-  TRIVY_CACHE_DIR: ${{ runner.temp }}/trivy-cache
+  TRIVY_CACHE_DIR: /tmp/trivy-cache
   TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db
   TRIVY_JAVA_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-java-db
 

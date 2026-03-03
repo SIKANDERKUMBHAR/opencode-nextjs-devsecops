@@ -60,7 +60,11 @@ async function run() {
       await downloadFile(downloadUrl, model.output);
       console.log(`Saved to ${model.output}`);
     } catch (error) {
-      console.error(`Failed to download ${model.name}:`, error.message);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("Failed to download model", {
+        modelName: model.name,
+        error: errorMessage,
+      });
     }
   }
 }

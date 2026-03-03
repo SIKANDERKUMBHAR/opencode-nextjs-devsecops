@@ -1,9 +1,5 @@
-import dynamic from "next/dynamic";
+import FactoryScene from "@/components/three/factory-scene";
 import ScrollReveal from "@/components/visuals/scroll-reveal";
-
-const FactoryScene = dynamic(() => import("@/components/three/factory-scene"), {
-  ssr: false,
-});
 
 const timeline = [
   {

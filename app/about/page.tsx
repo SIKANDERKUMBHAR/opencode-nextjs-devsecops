@@ -1,4 +1,4 @@
-import FactoryScene from "@/components/three/factory-scene";
+import AboutFactoryScene from "@/components/sections/about-factory-scene";
 import ScrollReveal from "@/components/visuals/scroll-reveal";
 
 const timeline = [
@@ -53,7 +53,7 @@ export default function AboutPage() {
           </div>
         </div>
         <div className="glass rounded-[2rem] border border-white/10 p-4">
-          <FactoryScene />
+          <AboutFactoryScene />
         </div>
       </section>
 

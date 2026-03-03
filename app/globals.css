@@ -48,6 +48,8 @@
 }
 
 :root {
+  --font-display: "Orbitron", "Exo 2", "Rajdhani", "Segoe UI", sans-serif;
+  --font-body: "Poppins", "Manrope", "Avenir Next", "Segoe UI", sans-serif;
   --radius: 0.9rem;
   --background: #0a0714;
   --foreground: #f4f4f8;

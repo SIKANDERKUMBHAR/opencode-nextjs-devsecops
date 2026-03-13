@@ -79,9 +79,9 @@ jobs:
       - name: Post-build scan (dockerized secagent)
         run: |
           rm -rf reports reports-postbuild
-          docker run -d --name app-under-test -p 3000:3000 app-under-test:ci
+          docker run -d --name app-under-test -p 3001:3000 app-under-test:ci
           for i in {1..30}; do
-            if curl -fsS http://127.0.0.1:3000 >/dev/null; then break; fi
+            if curl -fsS http://127.0.0.1:3001 >/dev/null; then break; fi
             sleep 2
           done
           docker rm -f secagent-zap || true
@@ -94,14 +94,17 @@ jobs:
             if curl -fsS http://127.0.0.1:8090/JSON/core/view/version/ >/dev/null; then break; fi
             sleep 2
           done
+          cp secagent-simple.yml secagent-simple-postbuild.yml
+          sed -i 's|target_url: http://127.0.0.1:3000|target_url: http://127.0.0.1:3001|' secagent-simple-postbuild.yml
           docker pull sikanderali/secagent:latest
           set +e
           docker run --rm --network host --user "$(id -u):$(id -g)" -v "$PWD":/workspace -w /workspace \
-            sikanderali/secagent:latest scan --target /workspace --config /workspace/secagent-simple.yml
+            sikanderali/secagent:latest scan --target /workspace --config /workspace/secagent-simple-postbuild.yml
           rc=$?
           set -e
           docker rm -f secagent-zap || true
           docker rm -f app-under-test || true
+          rm -f secagent-simple-postbuild.yml
           mv reports reports-postbuild
           exit $rc
 

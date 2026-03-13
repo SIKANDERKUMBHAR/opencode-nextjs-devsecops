@@ -1,0 +1,66 @@
+name: secagent-simple-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  security-scans:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install secagent and scanners
+        run: |
+          bash <(curl -fsSL https://raw.githubusercontent.com/SIKANDERKUMBHAR/secagent-devsecops-orchestrator/main/scripts/setup-local.sh)
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Verify secagent
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          secagent version
+          secagent doctor --config ./secagent-simple.yml || true
+
+      - name: Pre-build scan (local code)
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          rm -rf reports reports-prebuild
+          secagent scan --target . --config ./secagent-simple.yml
+          mv reports reports-prebuild
+
+      - name: Build application image
+        run: docker build -t app-under-test:ci .
+
+      - name: Post-build scan (dockerized secagent)
+        run: |
+          rm -rf reports reports-postbuild
+          docker pull sikanderali/secagent:latest
+          docker run --rm --user "$(id -u):$(id -g)" -v "$PWD":/workspace -w /workspace \
+            sikanderali/secagent:latest scan --target /workspace --config /workspace/secagent-simple.yml
+          mv reports reports-postbuild
+
+      - name: Upload pre-build reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: secagent-prebuild-reports
+          path: reports-prebuild/
+
+      - name: Upload post-build reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: secagent-postbuild-reports
+          path: reports-postbuild/
+
+      - name: Upload SARIF (post-build)
+        if: always() && github.event_name == 'push' && hashFiles('reports-postbuild/secagent-report.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: reports-postbuild/secagent-report.sarif

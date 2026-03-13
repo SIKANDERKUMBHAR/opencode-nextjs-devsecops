@@ -69,6 +69,13 @@ jobs:
       - name: Build application image
         run: docker build -t app-under-test:ci .
 
+      - name: Cleanup test ports and containers
+        run: |
+          docker rm -f app-under-test secagent-zap || true
+          docker ps -aq --filter publish=3000 | xargs -r docker rm -f
+          docker ps -aq --filter publish=8090 | xargs -r docker rm -f
+          pkill -f "next start" || true
+
       - name: Post-build scan (dockerized secagent)
         run: |
           rm -rf reports reports-postbuild

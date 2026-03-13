@@ -16,6 +16,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies and build
+        run: |
+          npm ci
+          npm run build
+
       - name: Install secagent and scanners
         run: |
           bash <(curl -fsSL https://raw.githubusercontent.com/SIKANDERKUMBHAR/secagent-devsecops-orchestrator/main/scripts/setup-local.sh)
@@ -31,8 +42,29 @@ jobs:
         run: |
           export PATH="$HOME/.local/bin:$PATH"
           rm -rf reports reports-prebuild
+          npm run start -- -H 0.0.0.0 -p 3000 > /tmp/prebuild-app.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:3000 >/dev/null; then break; fi
+            sleep 2
+          done
+          docker rm -f secagent-zap || true
+          docker run -d --name secagent-zap -p 8090:8090 ghcr.io/zaproxy/zaproxy:stable \
+            zap.sh -daemon -host 0.0.0.0 -port 8090 \
+            -config api.disablekey=true \
+            -config api.addrs.addr.name=.* \
+            -config api.addrs.addr.regex=true
+          for i in {1..40}; do
+            if curl -fsS http://127.0.0.1:8090/JSON/core/view/version/ >/dev/null; then break; fi
+            sleep 2
+          done
+          set +e
           secagent scan --target . --config ./secagent-simple.yml
+          rc=$?
+          set -e
+          docker rm -f secagent-zap || true
+          pkill -f "next start" || true
           mv reports reports-prebuild
+          exit $rc
 
       - name: Build application image
         run: docker build -t app-under-test:ci .
@@ -40,10 +72,31 @@ jobs:
       - name: Post-build scan (dockerized secagent)
         run: |
           rm -rf reports reports-postbuild
+          docker run -d --name app-under-test -p 3000:3000 app-under-test:ci
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:3000 >/dev/null; then break; fi
+            sleep 2
+          done
+          docker rm -f secagent-zap || true
+          docker run -d --name secagent-zap -p 8090:8090 ghcr.io/zaproxy/zaproxy:stable \
+            zap.sh -daemon -host 0.0.0.0 -port 8090 \
+            -config api.disablekey=true \
+            -config api.addrs.addr.name=.* \
+            -config api.addrs.addr.regex=true
+          for i in {1..40}; do
+            if curl -fsS http://127.0.0.1:8090/JSON/core/view/version/ >/dev/null; then break; fi
+            sleep 2
+          done
           docker pull sikanderali/secagent:latest
-          docker run --rm --user "$(id -u):$(id -g)" -v "$PWD":/workspace -w /workspace \
+          set +e
+          docker run --rm --network host --user "$(id -u):$(id -g)" -v "$PWD":/workspace -w /workspace \
             sikanderali/secagent:latest scan --target /workspace --config /workspace/secagent-simple.yml
+          rc=$?
+          set -e
+          docker rm -f secagent-zap || true
+          docker rm -f app-under-test || true
           mv reports reports-postbuild
+          exit $rc
 
       - name: Upload pre-build reports
         if: always()
